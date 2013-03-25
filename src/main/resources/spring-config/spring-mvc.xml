@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+    <mvc:annotation-driven/>
+    <mvc:resources mapping="/resources/**" location="/resources/" />
+    <mvc:default-servlet-handler />
+    <mvc:view-controller path="/" view-name="redirect:/home.do" />
+
+    <bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping"/>
+    <!-- 处理方法级别的@RequstMapping注解 -->
+    <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+        <property name="messageConverters">
+            <list>
+                <ref bean="stringHttpMessageConverter"/>
+                <ref bean="jsonHttpMessageConverter"/>
+                <ref bean="marshallingConverter"/>
+                <ref bean="atomConverter"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="stringHttpMessageConverter" class="org.springframework.http.converter.StringHttpMessageConverter">
+        <property name="supportedMediaTypes">
+            <list>
+                <value>text/plain;charset=UTF-8</value>
+            </list>
+        </property>
+    </bean>
+    <!--org.frameworkset.web.date.DateConvertController-->
+    <bean id="marshallingConverter" class="org.springframework.http.converter.xml.MarshallingHttpMessageConverter"
+          p:supportedMediaTypes="application/xml">
+        <constructor-arg ref="jaxbMarshaller"/>
+    </bean>
+    <bean id="atomConverter" class="org.springframework.http.converter.feed.AtomFeedHttpMessageConverter"
+          p:supportedMediaTypes="application/atom+xml"/>
+    <bean id="hibernateAwareObjectMapper" class="com.tongtu.support.HibernateAwareObjectMapper"/>
+
+    <bean id="jsonHttpMessageConverter"
+          class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"
+          p:supportedMediaTypes="application/json" p:objectMapper-ref="hibernateAwareObjectMapper" />
+    <!-- Client -->
+    <bean id="restTemplate" class="org.springframework.web.client.RestTemplate">
+        <property name="messageConverters">
+            <list>
+                <ref bean="marshallingConverter"/>
+                <ref bean="atomConverter"/>
+                <ref bean="jsonHttpMessageConverter"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="jaxbMarshaller" class="org.springframework.oxm.jaxb.Jaxb2Marshaller" p:packagesToScan="com.tongtu.beans" />
+    <!-- xml视图,Jaxb2Marshaller,需要配置对象和对象添加Annotation xml注解，不需要添加额外的jar包 -->
+    <bean id="xStreamMarshallingView" class="org.springframework.web.servlet.view.xml.MarshallingView"
+          p:marshaller-ref="jaxbMarshaller"/>
+
+    <!-- 视图解析器，根据视图的名称new ModelAndView(name)，在配置文件查找对应的bean配置 -->
+    <bean class="org.springframework.web.servlet.view.BeanNameViewResolver" p:order="3"/>
+    <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver" p:order="1">
+        <property name="mediaTypes">
+            <map>
+                <entry key="xml" value="application/xml"/>
+                <entry key="json" value="application/json"/>
+                <entry key="html" value="text/html"/>
+            </map>
+        </property>
+        <property name="viewResolvers">
+            <list>
+                <bean class="org.springframework.web.servlet.view.BeanNameViewResolver"/>
+                <bean class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+                    <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+                    <property name="prefix" value="/WEB-INF/pages/"/>
+                    <property name="suffix" value=".jsp"/>
+                </bean>
+            </list>
+        </property>
+        <property name="defaultViews">
+            <list>
+                <!-- application/json -->
+                <ref bean="mappingJacksonJsonView"/>
+                <!-- for application/xml -->
+                <ref bean="marshallingView"/>
+
+            </list>
+        </property>
+    </bean>
+    <bean id="mappingJacksonJsonView" class="org.springframework.web.servlet.view.json.MappingJackson2JsonView"
+          p:contentType="application/json"/>
+
+    <bean id="marshallingView" class="org.springframework.web.servlet.view.xml.MarshallingView"
+          p:marshaller-ref="xStreamMarshaller" p:contentType="application/xml">
+    </bean>
+    <bean id="xStreamMarshaller" class="org.springframework.oxm.xstream.XStreamMarshaller" />
+
+    <bean id="jettisonMappedXMlDriver" class="com.thoughtworks.xstream.io.json.JettisonMappedXmlDriver"/>
+</beans>

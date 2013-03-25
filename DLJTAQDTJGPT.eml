@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+	<output-test url="file://$MODULE_DIR$/target/test-classes"/>
+	<contentEntry url="file://$MODULE_DIR$">
+		<testFolder url="file://$MODULE_DIR$/src/test/java"/>
+		<excludeFolder url="file://$MODULE_DIR$/target"/>
+	</contentEntry>
+	<lib name="Maven: org.slf4j:jcl-over-slf4j:1.6.1" scope="RUNTIME"/>
+	<lib name="Maven: cglib:cglib-nodep:2.2.2" scope="RUNTIME"/>
+</component>
